@@ -1,5 +1,4 @@
 from typing import *
-from mpmath import mpf
 # from enum import IntEnum
 
 class UnitError(TypeError):
@@ -15,6 +14,12 @@ class Units:
     Siemens = 3
     Amp = 4
     Meter = 5
+    def __getattribute__(self, name):
+        if name == "Siemens":
+            raise NameError("Siemens is no longer allowed")
+        return super().__getattribute__(name)
+    def len() -> int:
+        return 6
 
 UNIT_ABBRV: Final = ("s", "F", "V", "S", "A", "m")
 PREFIX_ABBRV: Final = ("n","µ","m","","")
@@ -51,13 +56,17 @@ class Unit:
         for i in range(len(self.numerator)):
             # print(self.numerator[i])
             if (type(self.numerator[i]) != tuple):
+                print(numerator)
                 raise BSU
             if (type(self.numerator[i][0]) != type(self.numerator[i][1]) or type(self.numerator[i][0]) != int):
+                print(numerator)
                 raise BSU
         for i in range(len(self.denominator)):
             if (type(self.denominator[i]) != tuple):
+                print(denominator)
                 raise BSU
             if (type(self.denominator[i][0]) != type(self.denominator[i][1]) or type(self.denominator[i][0]) != int):
+                print(denominator)
                 raise BSU
         i = len(self.numerator) - 1
         while i >= 0:
@@ -89,22 +98,74 @@ class Unit:
         for _ in range(power):
             r *= self
         return r
+    def simplify(self, value: float) -> tuple[Self, float]:
+        """simplifies the unit"""
+        n = [[] for _ in range(Units.len())]
+        d = [[] for _ in range(Units.len())]
+        factor = 1.0
+        for i in range(len(self.numerator)):
+            n[self.numerator[i][0]].append(self.numerator[i])
+        for i in range(len(self.denominator)):
+            d[self.denominator[i][0]].append(self.denominator[i])
+        for i in range(len(n)):
+            while len(n[i]) > 0 and len(d[i]) > 0:
+                ln = n[i].pop()
+                ld = d[i].pop()
+                factor /= (10**(-ln[1]))
+                factor *= (10**(-ld[1]))
+        for l in n:
+            for i in range(len(l)):
+                if l[i][1] != 0:
+                    factor /= (10**(-l[i][1]))
+                    l[i] = (l[i][0], 0)
+        for l in d:
+            for i in range(len(l)):
+                if l[i][1] != 0:
+                    factor *= (10**(-l[i][1]))
+                    l[i] = (l[i][0], 0)
+        return (Unit([x for i in range(len(n)) for x in n[i]], [x for i in range(len(d)) for x in d[i]]), value * factor)
+    def similar(self, other: Self) -> bool:
+        if (not isinstance(other, Unit)):
+            raise TypeError("can only check similarity of Unit classes")
+        if len(self.numerator) != len(other.numerator) or len(self.denominator) != len(other.denominator):
+            return False
+        n1 = [[] for _ in range(Units.len())]
+        n2 = [[] for _ in range(Units.len())]
+        d1 = [[] for _ in range(Units.len())]
+        d2 = [[] for _ in range(Units.len())]
+        for i in range(len(self.numerator)):
+            n1[self.numerator[i][0]].append(self.numerator[i])
+        for i in range(len(self.denominator)):
+            d1[self.denominator[i][0]].append(self.denominator[i])
+        for i in range(len(other.numerator)):
+            n2[other.numerator[i][0]].append(other.numerator[i])
+        for i in range(len(other.denominator)):
+            d2[other.denominator[i][0]].append(other.denominator[i])
+        for i in range(len(n1)):
+            if len(n1[i]) != len(n2[i]):
+                return False
+        for i in range(len(d1)):
+            if len(d1[i]) != len(d2[i]):
+                return False
+        return True
+
 
 Unit.DIMENSIONLESS = Unit()
 Unit.SECONDS = Unit([(Units.Second, 0)]);Unit.MILLISECONDS = Unit([(Units.Second, -3)]);Unit.MICROSECONDS = Unit([(Units.Second, -6)]);Unit.NANOSECONDS = Unit([(Units.Second, -9)])
 Unit.FARADS = Unit([(Units.Farad, 0)]);Unit.MILLIFARADS = Unit([(Units.Farad, -3)]);Unit.MICROFARADS = Unit([(Units.Farad, -6)]);Unit.NANOFARADS = Unit([(Units.Farad, -9)])
 Unit.VOLTS = Unit([(Units.Volt, 0)]);Unit.MILLIVOLTS = Unit([(Units.Volt, -3)]);Unit.MICROVOLTS = Unit([(Units.Volt, -6)]);Unit.NANOVOLTS = Unit([(Units.Volt, -9)])
 Unit.AMPS = Unit([(Units.Amp, 0)]);Unit.MILLIAMPS = Unit([(Units.Amp, -3)]);Unit.MICROAMPS = Unit([(Units.Amp, -6)]);Unit.NANOAMPS = Unit([(Units.Amp, -9)])
-Unit.SIEMENS = Unit.AMPS/Unit.VOLTS;Unit.MILLISIEMENS = Unit.MILLIAMPS/Unit.MILLIVOLTS;Unit.MICROSIEMENS = Unit.MICROAMPS/Unit.MICROVOLTS;Unit.NANOSIEMENS = Unit.NANOAMPS/Unit.NANOVOLTS
+Unit.SIEMENS = Unit.AMPS/Unit.VOLTS;Unit.MILLISIEMENS = Unit.MILLIAMPS/Unit.VOLTS;Unit.MICROSIEMENS = Unit.MICROAMPS/Unit.VOLTS;Unit.NANOSIEMENS = Unit.NANOAMPS/Unit.VOLTS
 Unit.METERS = Unit([(Units.Meter, 0)]);Unit.MILLIMETERS = Unit([(Units.Meter, -3)]);Unit.MICROMETERS = Unit([(Units.Meter, -6)]);Unit.NANOMETERS = Unit([(Units.Meter, -9)])
 
 class Value:
-    def __init__(self, unit: Unit, val: mpf = mpf(0)) -> None:
+    def __init__(self, unit: Unit, val: float = 0.0) -> None:
         if (not isinstance(unit, Unit)):
             raise TypeError("Value requires a valid Unit")
+        unit, val = unit.simplify(float(val))
         self.unit = unit
-        self.value = mpf(val)
-    def mpf(self) -> mpf:
+        self.value = val
+    def mpf(self) -> float:
         return self.value
     def dbg(self, *args) -> Self:
         print(*args)
@@ -127,6 +188,8 @@ class Value:
         if (not isinstance(other, Value)):
             raise TypeError("can't do math on non-values")
         if (self.unit != other.unit):
+            # if self.unit.similar(other.unit):
+            #     ...
             print(self, other)
             raise UnitError("can't subtract mismatched units")
         return Value(self.unit, self.value - other.value)
@@ -155,4 +218,7 @@ class Conversion:
     def __call__(self, value: Value) -> Value:
         if (value.unit != self.input):
             raise UnitError(f"cannot use {self.input} converter to convert {value.unit}")
-        return Value(self.output, self.transform(value.mpf()))
+        return Value(self.output, self.transform(float(value)))
+    def coerce(value: Value, unit: Unit) -> Value:
+        """attempts to convert the value into the given unit"""
+        factor = 1

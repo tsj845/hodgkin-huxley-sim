@@ -1,4 +1,5 @@
-from mpmath import mp, mpf, exp
+# from mpmath import mp, mpf, exp
+from math import exp
 from .units import Unit, Value, Conversion
 from .constants import CAPACITANCE, CONDUCTANCE, BATTERY, TIME_DELTA
 from .initvals import IV
