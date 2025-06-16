@@ -21,8 +21,8 @@ class Sim:
         # print(self.l_V.value, self.l_m.value, self.l_h.value, self.l_n.value, '\n', sep='\n', end='\n')
         while et < time:
             ITER += 1
-            if ITER > 7000:
-                break
+            # if ITER > 7000:
+            #     break
             V = self.l_V.value
             M = self.l_m.value
             N = self.l_n.value

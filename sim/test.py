@@ -4,7 +4,8 @@ from .plotting import plot_4x4, plt, plot_var_overlay
 
 def show():
     # plot_4x4([s.l_V, s.l_m, s.l_h, s.l_n])
-    s.l_V.settings["title"] = "TMP"
+    s.l_V.settings["title"] = "Voltage, Gate Permetivity Probablities vs Time"
+    print(s.l_V.record[108])
     plot_var_overlay([s.l_V, s.l_m, s.l_h, s.l_n], s.l_V)
     # plot_4x4([[s.l_V, 1000.0]]+[[x, 100.0] for x in (s.l_m, s.l_h, s.l_n)])
 show()

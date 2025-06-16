@@ -58,13 +58,14 @@ def plot_var_overlay(vs: list[TrackedVar], s: TrackedVar) -> None:
     yLow = s.settings["yLow"]
     yHigh = s.settings["yHigh"]
     yStep = s.settings["yStep"]
+    xStep = s.settings["xStep"]
     ax.set_ylim(ymin=yLow, ymax=yHigh)
+    ax.set_xlabel("Time (ms)")
     c = ceil((yHigh-yLow)/yStep)
     # ax.set_yticks([float(p)/c for p in range(c)], [float(i)*yStep for i in range(c)])
     ax.set_yticks([float(i)*yStep+yLow for i in range(c)], [float(i)*yStep+yLow for i in range(c)])
     ax.set_title(s.settings["title"])
     for v in vs:
-        xStep = v.settings["xStep"]
         scale = v.settings["scale"]
         ax.plot(range(0,len(v)*xStep,xStep), list(map(lambda x: x*scale, v.record)), color=v.settings["color"], label=v.settings["legend"])
     fig.legend()
